@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Recibos de Taxi</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #e0f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      text-align: center;
+      color: #00796b;
+      margin-top: 0;
+    }
+
+    form {
+      width: 100%;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+    }
+
+    label, input {
+      display: block;
+      margin-bottom: 15px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    label {
+      font-weight: bold;
+      color: #00796b;
+    }
+
+    input {
+      padding: 10px;
+      border: 1px solid #bdbdbd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 15px;
+      background-color: #00796b;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #004d40;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 30px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      word-wrap: break-word; /* Permite el ajuste de texto en la celda */
+    }
+
+    th {
+      background-color: #00796b;
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .receipt-row:nth-child(even) {
+      background-color: #f1f1f1;
+    }
+
+    .receipt-row {
+      cursor: pointer;
+    }
+
+    .motivo {
+      display: block;
+      margin-top: 5px;
+      font-style: italic;
+      color: #555;
+      white-space: pre-wrap; /* Permite el ajuste de texto en la celda */
+    }
+
+    #totalAmount {
+      font-weight: bold;
+      margin-top: 20px;
+      text-align: right;
+      padding: 15px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      color: #00796b;
+      box-sizing: border-box;
+    }
+
+    @media only screen and (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      form, table, #totalAmount {
+        padding: 10px;
+      }
+
+      th, td {
+        padding: 10px;
+      }
+
+      button {
+        padding: 12px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form id="receiptForm">
+      <h2>Generador de Recibos de Taxi</h2>
+
+      <label for="name">Nombre:</label>
+      <input type="text" id="name" value="Xiomara" required>
+
+      <label for="amount">Monto a Cobrar (CRC):</label>
+      <input type="number" id="amount" required>
+
+      <label for="reason">Motivo de Viaje:</label>
+      <input type="text" id="reason" required>
+
+      <button type="submit">Generar Recibo</button>
+    </form>
+
+    <table id="receiptTable">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Nombre</th>
+          <th>Monto</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="receiptTableBody"></tbody>
+    </table>
+
+    <div id="totalAmount"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarHistorial();
+      document.getElementById('receiptForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        generarRecibo();
+      });
+    });
+
+    function obtenerFechaActual() {
+      const fecha = new Date();
+      return fecha.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+
+    function generarRecibo() {
+      const nombre = document.getElementById('name').value;
+      const monto = parseFloat(document.getElementById('amount').value);
+      const motivo = document.getElementById('reason').value;
+      const fecha = obtenerFechaActual();
+
+      const tableBody = document.getElementById('receiptTableBody');
+      const newRow = document.createElement('tr');
+      newRow.classList.add('receipt-row');
+      newRow.innerHTML = `
+        <td>${fecha}</td>
+        <td>${nombre}</td>
+        <td>₡${monto.toLocaleString()}</td>
+        <td rowspan="2" style="vertical-align: top;"></td>
+      `;
+
+      const motivoRow = document.createElement('tr');
+      motivoRow.classList.add('receipt-row');
+      motivoRow.innerHTML = `
+        <td colspan="3"><span class="motivo">${motivo}</span></td>
+      `;
+
+      newRow.addEventListener('click', function() {
+        if (confirm('¿Estás seguro de que deseas borrar este recibo?')) {
+          borrarRecibo(this);
+        }
+      });
+
+      motivoRow.addEventListener('click', function() {
+        if (confirm('¿Estás seguro de que deseas borrar este recibo?')) {
+          const previousRow = this.previousElementSibling;
+          previousRow.remove();
+          this.remove();
+          actualizarTotal();
+          guardarHistorial();
+        }
+      });
+
+      tableBody.appendChild(newRow);
+      tableBody.appendChild(motivoRow);
+      actualizarTotal();
+      document.getElementById('receiptForm').reset();
+      document.getElementById('name').value = 'Xiomara'; // Establecer nombre predeterminado después de resetear el formulario
+      guardarHistorial();
+    }
+
+    function borrarRecibo(row) {
+      const nextRow = row.nextElementSibling; // Seleccionar la fila siguiente que contiene el motivo
+      row.remove();
+      nextRow.remove();
+      actualizarTotal();
+      guardarHistorial();
+    }
+
+    function actualizarTotal() {
+      const rows = document.querySelectorAll('.receipt-row');
+      let total = 0;
+      rows.forEach((row, index) => {
+        if (index % 2 === 0) { // Solo sumar montos de filas con datos
+          const monto = parseFloat(row.children[2].textContent.replace('₡', '').replace(',', ''));
+          total += monto;
+        }
+      });
+      document.getElementById('totalAmount').textContent = `Total a cancelar: ₡${total.toLocaleString()}`;
+    }
+
+    function borrarHistorial() {
+      document.getElementById('receiptTableBody').innerHTML = '';
+      document.getElementById('totalAmount').textContent = '';
+      localStorage.removeItem('receiptHistory');
+    }
+
+    function guardarHistorial() {
+      const rows = document.querySelectorAll('.receipt-row');
+      const history = [];
+      for (let i = 0; i < rows.length; i += 2) {
+        const fecha = rows[i].children[0].textContent;
+        const nombre = rows[i].children[1].textContent;
+        const monto = rows[i].children[2].textContent;
+        const motivo = rows[i + 1].children[0].textContent;
+        history.push({ fecha, nombre, monto, motivo });
+      }
+      localStorage.setItem('receiptHistory', JSON.stringify(history));
+    }
+
+    function cargarHistorial() {
+      const history = JSON.parse(localStorage.getItem('receiptHistory') || '[]');
+      const tableBody = document.getElementById('receiptTableBody');
+      history.forEach(({ fecha, nombre, monto, motivo }) => {
+        const newRow = document.createElement('tr');
+        newRow.classList.add('receipt-row');
+        newRow.innerHTML = `
+          <td>${fecha}</td>
+          <td>${nombre}</td>
+          <td>${monto}</td>
+          <td rowspan="2" style="vertical-align: top;"></td>
+        `;
+        const motivoRow = document.createElement('tr');
+        motivoRow.classList.add('receipt-row');
+        motivoRow.innerHTML = `
+          <td colspan="3"><span class="motivo">${motivo}</span></td>
+        `;
+        newRow.addEventListener('click', function() {
+          if (confirm('¿Estás seguro de que deseas borrar este recibo?')) {
+            borrarRecibo(this);
+          }
+        });
+        motivoRow.addEventListener('click', function() {
+          if (confirm('¿Estás seguro de que deseas borrar este recibo?')) {
+            const previousRow = this.previousElementSibling;
+            previousRow.remove();
+            this.remove();
+            actualizarTotal();
+            guardarHistorial();
+          }
+        });
+        tableBody.appendChild(newRow);
+        tableBody.appendChild(motivoRow);
+      });
+      actualizarTotal();
+    }
+  </script>
+</body>
+</html>
